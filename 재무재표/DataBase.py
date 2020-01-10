@@ -2,6 +2,9 @@ import GetFinancialStatements as GF
 import GetStockInfo as GS
 import sqlite3
 
+KOSPI = 1
+KOSDAQ = 2
+KONEX = 4
 
 def Create_DB():
     con = sqlite3.connect("c:/Users/kdy/stock.db")
@@ -404,7 +407,7 @@ def Insert_DB_Afinance():
     con.commit()
     con.close()
 
-def Insert_DB_invest(parayear):
+def Insert_DB_invest(parayear,sector):
     kospi = Get_DB_info("Kospi_info")
     kosdaq = Get_DB_info("Kosdaq_info")
     konex = Get_DB_info("Konex_info")
@@ -420,200 +423,210 @@ def Insert_DB_invest(parayear):
     konex_record = []
 
     count = 0
-    for i in kospi:
-        break
-        temp = GF.StockFinance(i[1])
-        temp.getPrice()
+    if(sector % 2 is 1):
+        for i in kospi:
+            print(i[1])
+            temp = GF.StockFinance(i[1])
+            temp.getPrice()
 
-        record = [i[0], i[1]]
-        record.extend(" ")
-        record[2] = temp.Price["Price"]
-
-        price = int(record[2].replace(',', ''))
-        cursor.execute(
-            "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
-            (i[1], year + "%")
-        )
-        recent_data = cursor.fetchall()
-        if (len(recent_data) is not 0):
-            if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
-                cursor.execute(
-                    "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
-                    (i[1], str(int(year) - 1) + "%")
-                )
-                recent_data2 = cursor.fetchall()
-                if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
-                    continue
-                totalnum = int(recent_data2[0][1].replace(',', ''))
-            else:
-                totalnum = int(recent_data[0][1].replace(',', ''))
-
-            # PER
+            record = [i[0], i[1]]
             record.extend(" ")
-            if (recent_data[0][0] is not "\xa0" and recent_data[0][1] is not "\xa0"):
-                if (recent_data[0][0] is "0" or recent_data[0][1] is "0"):
-                    continue
-                PER = float(price / float(int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
-                record[3] = str(round(PER, 2))
+            record[2] = temp.Price["Price"]
 
-            # PBR
-            record.extend(" ")
-            if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
-                if (recent_data[0][2] is recent_data[0][3]):
-                    continue
-                PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
-                    recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
-                record[4] = str(round(PBR, 2))
+            price = int(record[2].replace(',', ''))
+            cursor.execute(
+                "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
+                (i[1], year + "%")
+            )
+            recent_data = cursor.fetchall()
+            if (len(recent_data) is not 0):
+                if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
+                    cursor.execute(
+                        "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
+                        (i[1], str(int(year) - 1) + "%")
+                    )
+                    recent_data2 = cursor.fetchall()
+                    if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
+                        continue
+                    totalnum = int(recent_data2[0][1].replace(',', ''))
+                else:
+                    totalnum = int(recent_data[0][1].replace(',', ''))
 
-            # PSR
-            record.extend(" ")
-            if (recent_data[0][4] is not "\xa0"):
-                if (recent_data[0][4] is "0"):
-                    continue
-                PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
-                record[5] = str(round(PSR, 2))
-
-            print(record)
-            kospi_record.extend(" ")
-            kospi_record[count] = record
-            count += 1
-            del (temp)
-
-    count = 0
-    for i in kosdaq:
-        print(i[1])
-        temp = GF.StockFinance(i[1])
-        temp.getPrice()
-
-        record = [i[0], i[1]]
-        record.extend(" ")
-        record[2] = temp.Price["Price"]
-
-        price = int(record[2].replace(',', ''))
-        cursor.execute(
-            "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
-            (i[1], year + "%")
-        )
-        recent_data = cursor.fetchall()
-        if (len(recent_data) is not 0):
-            if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
-                cursor.execute(
-                    "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
-                    (i[1], str(int(year) - 1) + "%")
-                )
-                recent_data2 = cursor.fetchall()
-                if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
-                    continue
-                totalnum = int(recent_data2[0][1].replace(',', ''))
-            else:
-                totalnum = int(recent_data[0][1].replace(',', ''))
-
-            # PER
-            record.extend(" ")
-            if (recent_data[0][0] is not "\xa0" and recent_data[0][1] is not "\xa0"):
-                if (recent_data[0][0] is "0" or recent_data[0][1] is "0"):
-                    continue
-                PER = float(price / float(
-                    int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
+                # PER
                 record.extend(" ")
-                record[3] = str(round(PER, 2))
+                if (recent_data[0][0] is not "\xa0"):
+                    if (recent_data[0][0] is "0" or totalnum is 0):
+                        continue
+                    PER = float(price / float(int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
+                    record[3] = str(round(PER, 2))
 
-            # PBR
+                # PBR
+                record.extend(" ")
+                if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
+                    if (recent_data[0][2] is recent_data[0][3]):
+                        continue
+                    PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
+                        recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
+                    record[4] = str(round(PBR, 2))
+
+                # PSR
+                record.extend(" ")
+                if (recent_data[0][4] is not "\xa0"):
+                    if (recent_data[0][4] is "0"):
+                        continue
+                    PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
+                    record[5] = str(round(PSR, 2))
+
+                print(record)
+                kospi_record.extend(" ")
+                kospi_record[count] = record
+                count += 1
+                del (temp)
+        for i in kospi_record:
+            if len(i) == 6:
+                cursor.execute("INSERT INTO Kospi_invest_info VALUES(?,?,?,?,?,?)", tuple(i))
+        con.commit()
+
+    sector /= 2
+    sector = int(sector)
+    if (sector % 2 is 1):
+        count = 0
+        for i in kosdaq:
+            print(i[1])
+            temp = GF.StockFinance(i[1])
+            temp.getPrice()
+
+            if(count is 5):
+                break
+            record = [i[0], i[1]]
             record.extend(" ")
-            if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
-                if (recent_data[0][2] is recent_data[0][3]):
-                    continue
-                PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
-                    recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
-                record[4] = str(round(PBR, 2))
+            record[2] = temp.Price["Price"]
 
-            # PSR
+            price = int(record[2].replace(',', ''))
+            cursor.execute(
+                "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
+                (i[1], year + "%")
+            )
+            recent_data = cursor.fetchall()
+            if (len(recent_data) is not 0):
+                if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
+                    cursor.execute(
+                        "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
+                        (i[1], str(int(year) - 1) + "%")
+                    )
+                    recent_data2 = cursor.fetchall()
+                    if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
+                        continue
+                    totalnum = int(recent_data2[0][1].replace(',', ''))
+                else:
+                    totalnum = int(recent_data[0][1].replace(',', ''))
+
+                # PER
+                record.extend(" ")
+                if (recent_data[0][0] is not "\xa0"):
+                    if (recent_data[0][0] is "0" or totalnum is 0):
+                        continue
+                    PER = float(price / float(
+                        int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
+                    record.extend(" ")
+                    record[3] = str(round(PER, 2))
+
+                # PBR
+                record.extend(" ")
+                if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
+                    if (recent_data[0][2] is recent_data[0][3]):
+                        continue
+                    PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
+                        recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
+                    record[4] = str(round(PBR, 2))
+
+                # PSR
+                record.extend(" ")
+                if (recent_data[0][4] is not "\xa0"):
+                    if (recent_data[0][4] is "0"):
+                        continue
+                    PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
+                    record[5] = str(round(PSR, 2))
+
+                print(record)
+                kosdaq_record.extend(" ")
+                kosdaq_record[count] = record
+                count += 1
+                del (temp)
+        for i in kosdaq_record:
+            if len(i) == 6:
+                cursor.execute("INSERT INTO Kosdaq_invest_info VALUES(?,?,?,?,?,?)", tuple(i))
+        con.commit()
+
+    sector /= 2
+    sector = int(sector)
+    if (sector % 2 is 1):
+        count = 0
+        for i in konex:
+            print(i[1])
+            temp = GF.StockFinance(i[1])
+            temp.getPrice()
+
+            record = [i[0], i[1]]
             record.extend(" ")
-            if (recent_data[0][4] is not "\xa0"):
-                if (recent_data[0][4] is "0"):
-                    continue
-                PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
-                record[5] = str(round(PSR, 2))
+            record[2] = temp.Price["Price"]
 
-            print(record)
-            kosdaq_record.extend(" ")
-            kosdaq_record[count] = record
-            count += 1
-            del (temp)
+            price = int(record[2].replace(',', ''))
+            cursor.execute(
+                "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
+                (i[1], year + "%")
+            )
+            recent_data = cursor.fetchall()
+            if (len(recent_data) is not 0):
+                if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
+                    cursor.execute(
+                        "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
+                        (i[1], str(int(year) - 1) + "%")
+                    )
+                    recent_data2 = cursor.fetchall()
+                    if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
+                        continue
+                    totalnum = int(recent_data2[0][1].replace(',', ''))
+                else:
+                    totalnum = int(recent_data[0][1].replace(',', ''))
+                # PER
+                record.extend(" ")
+                if (recent_data[0][0] is not "\xa0"):
+                    if (recent_data[0][0] is "0" or totalnum is 0):
+                        continue
+                    PER = float(price / float(int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
+                    record[3] = str(round(PER, 2))
 
-    count = 0
-    for i in konex:
-        print(i[1])
-        temp = GF.StockFinance(i[1])
-        temp.getPrice()
+                # PBR
+                record.extend(" ")
+                if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
+                    if (recent_data[0][2] is recent_data[0][3]):
+                        continue
+                    PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
+                        recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
+                    record[4] = str(round(PBR, 2))
 
-        record = [i[0], i[1]]
-        record.extend(" ")
-        record[2] = temp.Price["Price"]
+                # PSR
+                record.extend(" ")
+                if (recent_data[0][4] is not "\xa0"):
+                    if (recent_data[0][4] is "0"):
+                        continue
+                    PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
+                    record[5] = str(round(PSR, 2))
 
-        price = int(record[2].replace(',', ''))
-        cursor.execute(
-            "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
-            (i[1], year + "%")
-        )
-        recent_data = cursor.fetchall()
-        if (len(recent_data) is not 0):
-            if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
-                cursor.execute(
-                    "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
-                    (i[1], str(int(year) - 1) + "%")
-                )
-                recent_data2 = cursor.fetchall()
-                if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
-                    continue
-                totalnum = int(recent_data2[0][1].replace(',', ''))
-            else:
-                totalnum = int(recent_data[0][1].replace(',', ''))
-            # PER
-            record.extend(" ")
-            if (recent_data[0][0] is not "\xa0" and recent_data[0][1] is not "\xa0"):
-                if (recent_data[0][0] is "0" or recent_data[0][1] is "0"):
-                    continue
-                PER = float(price / float(int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
-                record[3] = str(round(PER, 2))
-
-            # PBR
-            record.extend(" ")
-            if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
-                if (recent_data[0][2] is recent_data[0][3]):
-                    continue
-                PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
-                    recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
-                record[4] = str(round(PBR, 2))
-
-            # PSR
-            record.extend(" ")
-            if (recent_data[0][4] is not "\xa0"):
-                if (recent_data[0][4] is "0"):
-                    continue
-                PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
-                record[5] = str(round(PSR, 2))
-
-            print(record)
-            konex_record.extend(" ")
-            konex_record[count] = record
-            count += 1
-            del (temp)
-
-    # for i in kospi_record:
-    #     if len(i) == 6:
-    #         cursor.execute("INSERT INTO Kospi_invest_info VALUES(?,?,?,?,?,?)",i)
-    # for i in kosdaq_record:
-    #     if len(i) == 6:
-    #         cursor.execute("INSERT INTO Kosdaq_invest_info VALUES(?,?,?,?,?,?)", i)
-    # for i in konex_record:
-    #     if len(i) == 6:
-    #         cursor.execute("INSERT INTO Konex_invest_info VALUES(?,?,?,?,?,?)", i)
-    con.commit()
+                print(record)
+                konex_record.extend(" ")
+                konex_record[count] = record
+                count += 1
+                del (temp)
+        for i in konex_record:
+            if len(i) == 6:
+                cursor.execute("INSERT INTO Konex_invest_info VALUES(?,?,?,?,?,?)", tuple(i))
+        con.commit()
     con.close()
 
 
-def Insert_DB_exp_invest(parayear):
+def Insert_DB_exp_invest(parayear,sector):
     kospi = Get_DB_info("Kospi_info")
     kosdaq = Get_DB_info("Kosdaq_info")
     konex = Get_DB_info("Konex_info")
@@ -629,205 +642,215 @@ def Insert_DB_exp_invest(parayear):
     konex_record = []
 
     count = 0
-    for i in kospi:
-        print(i[1])
-        temp = GF.StockFinance(i[1])
-        temp.getPrice()
+    if (sector % 2 is 1):
+        for i in kospi:
+            print(i[1])
+            temp = GF.StockFinance(i[1])
+            temp.getPrice()
 
-        record = [i[0], i[1]]
-        record.extend(" ")
-        record[2] = temp.Price["Price"]
-
-        price = int(record[2].replace(',',''))
-        cursor.execute(
-            "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
-            (i[1], year + "%")
-        )
-        recent_data = cursor.fetchall()
-        if(len(recent_data) is not 0):
-            if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
-                cursor.execute(
-                    "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
-                    (i[1], str(int(year)-1) + "%")
-                )
-                recent_data2 = cursor.fetchall()
-                if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
-                    continue
-                totalnum = int(recent_data2[0][1].replace(',', ''))
-            else:
-                totalnum = int(recent_data[0][1].replace(',', ''))
-
-            # PER
+            record = [i[0], i[1]]
             record.extend(" ")
-            if(recent_data[0][0] is not "\xa0" and recent_data[0][1] is not "\xa0"):
-                if (recent_data[0][0] is "0" or recent_data[0][1] is "0"):
-                    continue
-                PER = float( price / float(int(recent_data[0][0].replace(',','')) * 100000 / totalnum))
-                record[3] = str(round(PER,2))
+            record[2] = temp.Price["Price"]
 
+            price = int(record[2].replace(',',''))
+            cursor.execute(
+                "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
+                (i[1], year + "%")
+            )
+            recent_data = cursor.fetchall()
+            if(len(recent_data) is not 0):
+                if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
+                    cursor.execute(
+                        "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kospi_Afinance WHERE Code = ? AND Date like ?",
+                        (i[1], str(int(year)-1) + "%")
+                    )
+                    recent_data2 = cursor.fetchall()
+                    if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
+                        continue
+                    totalnum = int(recent_data2[0][1].replace(',', ''))
+                else:
+                    totalnum = int(recent_data[0][1].replace(',', ''))
 
-            #PBR
-            record.extend(" ")
-            if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
-                if (recent_data[0][2] is recent_data[0][3]):
-                    continue
-                PBR = float( price / float((int(recent_data[0][2].replace(',','')) - int(recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
-                record[4] = str(round(PBR,2))
-
-            #PSR
-            record.extend(" ")
-            if (recent_data[0][4] is not "\xa0"):
-                if (recent_data[0][4] is "0"):
-                    continue
-                PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
-                record[5] = str(round(PSR,2))
-
-            print(record)
-            kospi_record.extend(" ")
-            kospi_record[count] = record
-            count += 1
-            del (temp)
-
-    count = 0
-    for i in kosdaq:
-        print(i[1])
-        temp = GF.StockFinance(i[1])
-        temp.getPrice()
-
-        record = [i[0], i[1]]
-        record.extend(" ")
-        record[2] = temp.Price["Price"]
-
-        price = int(record[2].replace(',', ''))
-        cursor.execute(
-            "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
-            (i[1], year)
-        )
-        recent_data = cursor.fetchall()
-        if (len(recent_data) is not 0):
-            if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
-                cursor.execute(
-                    "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
-                    (i[1], str(int(year) - 1) + "%")
-                )
-                recent_data2 = cursor.fetchall()
-                if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
-                    continue
-                totalnum = int(recent_data2[0][1].replace(',', ''))
-            else:
-                totalnum = int(recent_data[0][1].replace(',', ''))
-
-            # PER
-            record.extend(" ")
-            if (recent_data[0][0] is not "\xa0" and recent_data[0][1] is not "\xa0"):
-                if (recent_data[0][0] is "0" or recent_data[0][1] is "0"):
-                    continue
-                PER = float(price / float(
-                    int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
+                # PER
                 record.extend(" ")
-                record[3] = str(round(PER, 2))
+                if(recent_data[0][0] is not "\xa0"):
+                    if (recent_data[0][0] is "0" or totalnum is 0):
+                        continue
+                    PER = float( price / float(int(recent_data[0][0].replace(',','')) * 100000 / totalnum))
+                    record[3] = str(round(PER,2))
 
 
-            # PBR
+                #PBR
+                record.extend(" ")
+                if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
+                    if (recent_data[0][2] is recent_data[0][3]):
+                        continue
+                    PBR = float( price / float((int(recent_data[0][2].replace(',','')) - int(recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
+                    record[4] = str(round(PBR,2))
+
+                #PSR
+                record.extend(" ")
+                if (recent_data[0][4] is not "\xa0"):
+                    if (recent_data[0][4] is "0"):
+                        continue
+                    PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
+                    record[5] = str(round(PSR,2))
+
+                print(record)
+                kospi_record.extend(" ")
+                kospi_record[count] = record
+                count += 1
+                del (temp)
+
+        for i in kospi_record:
+            if len(i) == 6:
+                cursor.execute("INSERT INTO Kospi_exp_invest_info VALUES(?,?,?,?,?,?)", tuple(i))
+        con.commit()
+
+    sector /= 2
+    sector = int(sector)
+    if (sector % 2 is 1):
+        count = 0
+        for i in kosdaq:
+            print(i[1])
+            temp = GF.StockFinance(i[1])
+            temp.getPrice()
+
+            record = [i[0], i[1]]
             record.extend(" ")
-            if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
-                if (recent_data[0][2] is recent_data[0][3]):
-                    continue
-                PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
-                    recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
-                record[4] = str(round(PBR, 2))
+            record[2] = temp.Price["Price"]
 
-            # PSR
+            price = int(record[2].replace(',', ''))
+            cursor.execute(
+                "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
+                (i[1], year + "%")
+            )
+            recent_data = cursor.fetchall()
+            if (len(recent_data) is not 0):
+                if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
+                    cursor.execute(
+                        "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Kosdaq_Afinance WHERE Code = ? AND Date like ?",
+                        (i[1], str(int(year) - 1) + "%")
+                    )
+                    recent_data2 = cursor.fetchall()
+                    if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
+                        continue
+                    totalnum = int(recent_data2[0][1].replace(',', ''))
+                else:
+                    totalnum = int(recent_data[0][1].replace(',', ''))
+
+                # PER
+                record.extend(" ")
+                if (recent_data[0][0] is not "\xa0"):
+                    if (recent_data[0][0] is "0" or totalnum is 0):
+                        continue
+                    PER = float(price / float(
+                        int(recent_data[0][0].replace(',', '')) * 100000 / totalnum))
+                    record.extend(" ")
+                    record[3] = str(round(PER, 2))
+
+
+                # PBR
+                record.extend(" ")
+                if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
+                    if (recent_data[0][2] is recent_data[0][3]):
+                        continue
+                    PBR = float(price / float((int(recent_data[0][2].replace(',', '')) - int(
+                        recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
+                    record[4] = str(round(PBR, 2))
+
+                # PSR
+                record.extend(" ")
+                if (recent_data[0][4] is not "\xa0"):
+                    if (recent_data[0][4] is "0"):
+                        continue
+                    PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
+                    record[5] = str(round(PSR, 2))
+
+                print(record)
+                kosdaq_record.extend(" ")
+                kosdaq_record[count] = record
+                count += 1
+                del (temp)
+        for i in kosdaq_record:
+            if len(i) == 6:
+                cursor.execute("INSERT INTO Kosdaq_exp_invest_info VALUES(?,?,?,?,?,?)", tuple(i))
+        con.commit()
+
+    sector /= 2
+    sector = int(sector)
+    if (sector % 2 is 1):
+        count = 0
+        for i in konex:
+            print(i[1])
+            temp = GF.StockFinance(i[1])
+            temp.getPrice()
+
+            record = [i[0], i[1]]
             record.extend(" ")
-            if (recent_data[0][4] is not "\xa0"):
-                if (recent_data[0][4] is "0"):
-                    continue
-                PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
-                record[5] = str(round(PSR, 2))
+            record[2] = temp.Price["Price"]
 
-            print(record)
-            kosdaq_record.extend(" ")
-            kosdaq_record[count] = record
-            count += 1
-            del (temp)
-
-    count = 0
-    for i in konex:
-        print(i[1])
-        temp = GF.StockFinance(i[1])
-        temp.getPrice()
-
-        record = [i[0], i[1]]
-        record.extend(" ")
-        record[2] = temp.Price["Price"]
-
-        price = int(record[2].replace(',',''))
-        cursor.execute(
-            "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
-            (i[1], year)
-        )
-        recent_data = cursor.fetchall()
-        if (len(recent_data) is not 0):
-            if (recent_data[0][1] is "0" or recent_data[0][1] is "\xa0"):
-                cursor.execute(
-                    "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
-                    (i[1], str(int(year) - 1) + "%")
-                )
-                recent_data2 = cursor.fetchall()
-                if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
-                    continue
-                totalnum = int(recent_data2[0][1].replace(',', ''))
-            else:
-                totalnum = int(recent_data[0][1].replace(',', ''))
-            # PER
-            record.extend(" ")
-            if(recent_data[0][0] is not "\xa0" and recent_data[0][1] is not "\xa0"):
-                if (recent_data[0][0] is "0" or recent_data[0][1] is "0"):
-                    continue
-                PER = float( price / float(int(recent_data[0][0].replace(',','')) * 100000 / totalnum))
-                record[3] = str(round(PER,2))
+            price = int(record[2].replace(',',''))
+            cursor.execute(
+                "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
+                (i[1], year + "%")
+            )
+            recent_data = cursor.fetchall()
+            if (len(recent_data) is not 0):
+                if (recent_data[0][1] is "0"):
+                    cursor.execute(
+                        "SELECT NetIncome, NumOutstandingShares,TotalAsset, TotalDebt,SalesAccount FROM Konex_Afinance WHERE Code = ? AND Date like ?",
+                        (i[1], str(int(year) - 1) + "%")
+                    )
+                    recent_data2 = cursor.fetchall()
+                    if (recent_data2[0][1] is "0" or recent_data2[0][1] is "\xa0"):
+                        continue
+                    totalnum = int(recent_data2[0][1].replace(',', ''))
+                else:
+                    totalnum = int(recent_data[0][1].replace(',', ''))
+                # PER
+                record.extend(" ")
+                if(recent_data[0][0] is not "\xa0"):
+                    if (recent_data[0][0] is "0" or totalnum is 0):
+                        continue
+                    PER = float( price / float(int(recent_data[0][0].replace(',','')) * 100000 / totalnum))
+                    record[3] = str(round(PER,2))
 
 
-            #PBR
-            record.extend(" ")
-            if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
-                if (recent_data[0][2] is recent_data[0][3]):
-                    continue
-                PBR = float( price / float((int(recent_data[0][2].replace(',','')) - int(recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
-                record[4] = str(round(PBR,2))
+                #PBR
+                record.extend(" ")
+                if (recent_data[0][2] is not "\xa0" and recent_data[0][3] is not "\xa0"):
+                    if (recent_data[0][2] is recent_data[0][3]):
+                        continue
+                    PBR = float( price / float((int(recent_data[0][2].replace(',','')) - int(recent_data[0][3].replace(',', ''))) * 100000 / totalnum))
+                    record[4] = str(round(PBR,2))
 
-            #PSR
-            record.extend(" ")
-            if (recent_data[0][4] is not "\xa0"):
-                if (recent_data[0][4] is "0"):
-                    continue
-                PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
-                record[5] = str(round(PSR,2))
+                #PSR
+                record.extend(" ")
+                if (recent_data[0][4] is not "\xa0"):
+                    if (recent_data[0][4] is "0"):
+                        continue
+                    PSR = float(price / float(int(recent_data[0][4].replace(',', '')) * 100000 / totalnum))
+                    record[5] = str(round(PSR,2))
 
-            print(record)
-            konex_record.extend(" ")
-            konex_record[count] = record
-            count += 1
-            del (temp)
-
-    # for i in kospi_record:
-    #     if len(i) == 6:
-    #         cursor.execute("INSERT INTO Kospi_exp_invest_info VALUES(?,?,?,?,?,?)",i)
-    # for i in kosdaq_record:
-    #     if len(i) == 6:
-    #         cursor.execute("INSERT INTO Kosdaq_exp_invest_info VALUES(?,?,?,?,?,?)", i)
-    # for i in konex_record:
-    #     if len(i) == 6:
-    #         cursor.execute("INSERT INTO Konex_exp_invest_info VALUES(?,?,?,?,?,?)", i)
-    con.commit()
+                print(record)
+                konex_record.extend(" ")
+                konex_record[count] = record
+                count += 1
+                del (temp)
+        for i in konex_record:
+            if len(i) == 6:
+                cursor.execute("INSERT INTO Konex_exp_invest_info VALUES(?,?,?,?,?,?)", tuple(i))
+        con.commit()
     con.close()
 
 
 if __name__ == "__main__":
-    #Create_DB()
+    Create_DB()
     #Insert_DB_info()
     #Insert_DB_Afinance()
-    Insert_DB_invest(2019)
+    #Insert_DB_invest(2018,KOSDAQ)
+    Insert_DB_exp_invest(2019, KOSDAQ)
 
 
 
